@@ -71,16 +71,18 @@ def proceed_add_employee_data(message, delete_user_message=True, skip_phone=Fals
             skip_btn = types.InlineKeyboardButton(text='⏭️ Пропустити', callback_data='skip_phone')
 
     elif not add_employee_data[message.chat.id].get('phone'):
-        message_text = f'📞 {message.text} це робочий чи особистий телефон?'
-
         if skip_phone:
             add_employee_data[message.chat.id]['phone'] = 'skip'
+            add_employee_data[message.chat.id]['phone_type'] = 'skip'
+            message_text = '📧 Введіть email нового співробітника:'
         else:
+            message_text = f'📞 {message.text} це робочий чи особистий телефон?'
             normalized_phone = normalize_phone_number(message.text)
             if normalized_phone:
                 add_employee_data[message.chat.id]['phone'] = normalized_phone
                 work_phone_btn = types.InlineKeyboardButton(text='📞 Робочий телефон', callback_data='work_phone')
-                personal_phone_btn = types.InlineKeyboardButton(text='📱 Особистий телефон', callback_data='personal_phone')
+                personal_phone_btn = types.InlineKeyboardButton(text='📱 Особистий телефон',
+                                                                callback_data='personal_phone')
             else:
                 message_text = ('🚫 Номер телефону введено невірно.'
                                 '\nВведіть номер телефону (для України можна без коду країни):')
@@ -175,6 +177,8 @@ def proceed_add_employee_data(message, delete_user_message=True, skip_phone=Fals
 
         with DatabaseConnection() as (conn, cursor):
             phone_type = add_employee_data[message.chat.id].get('phone_type', 'phone')
+            if phone_type == 'skip':
+                phone_type = 'phone'
             query = (
                 f'INSERT INTO employees (name, {phone_type}, position, telegram_username, sub_department_id, '
                 'telegram_user_id, email, date_of_birth, crm_id) '
