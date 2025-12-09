@@ -203,13 +203,7 @@ def confirm_approve_commendations_handler(call):
                 bot.send_photo(recipient_id, image, caption='📩 Вам було надіслано подяку.')
             except apihelper.ApiTelegramException as e:
                 if e.error_code == 400 and "chat not found" in e.description:
-                    bot.send_message(call.message.chat.id, f'🚫 Користувача <b>{card_data[0]}</b> не знайдено. '
-                                                           f'Надсилаю подяку як юзербот.',
-                                     parse_mode='HTML')
-                    try:
-                        asyncio.run(send_photo(recipient_id, image, caption='📩 Вам надіслано подяку.'))
-                    except Exception as e:
-                        logger.error(f'Error sending photo via userbot: {e}')
+                    logger.warning(f'Cannot send commendation to user {recipient_id}: chat not found.')
 
             bot.send_photo(call.message.chat.id, image, caption='✅ Подяку надіслано.')
     scheduler.add_job(run_create_monthly_commendation_details_sheet, trigger='date', run_date=datetime.datetime.now())
