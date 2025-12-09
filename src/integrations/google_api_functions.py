@@ -156,11 +156,8 @@ def update_commendations_mod_in_sheet(spreadsheet_id, sheet_name, DatabaseConnec
     service = build('sheets', 'v4', credentials=creds)
 
     sheet = service.spreadsheets()
-    range_name = f'{sheet_name}!A:F' if not remove_all else f'{sheet_name}!A:G'
-    result = sheet.values().get(spreadsheetId=spreadsheet_id, range=range_name).execute()
-    values = result.get('values', [])
 
-    headers = values[0] if values else []
+    range_name = f'{sheet_name}!A2:G' if remove_all else f'{sheet_name}!A2:F'
 
     with DatabaseConnection() as (conn, cursor):
         cursor.execute(
@@ -181,7 +178,7 @@ def update_commendations_mod_in_sheet(spreadsheet_id, sheet_name, DatabaseConnec
     ]
 
     body = {
-        'values': [headers] + processed_info if headers else processed_info
+        'values': processed_info
     }
 
     sheet.values().clear(
@@ -190,14 +187,15 @@ def update_commendations_mod_in_sheet(spreadsheet_id, sheet_name, DatabaseConnec
         body={}
     ).execute()
 
-    sheet.values().update(
-        spreadsheetId=spreadsheet_id,
-        range=range_name,
-        valueInputOption='RAW',
-        body=body
-    ).execute()
+    if processed_info:
+        sheet.values().update(
+            spreadsheetId=spreadsheet_id,
+            range=range_name,
+            valueInputOption='RAW',
+            body=body
+        ).execute()
 
-    logger.info(f'Data updated in sheet {sheet_name}')
+    logger.info(f'Data updated in sheet {sheet_name} (headers preserved)')
 
 
 def update_all_commendations_in_sheet(spreadsheet_id, sheet_name, DatabaseConnection):
