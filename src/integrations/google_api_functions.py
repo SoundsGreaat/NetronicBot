@@ -587,6 +587,7 @@ def approve_and_parse_to_database(spreadsheet_id, sheet_name, DatabaseConnection
         return False
 
     placeholders = ','.join(['%s'] * len(ids_to_approve))
+
     select_query = f'''
         SELECT 
             cm.id,
@@ -596,7 +597,8 @@ def approve_and_parse_to_database(spreadsheet_id, sheet_name, DatabaseConnection
             cm.employee_from_id, 
             cm.position, 
             cm.value_id,
-            csm.sender_name
+            csm.sender_name,
+            cm.branch
         FROM commendations_mod cm
         LEFT JOIN commendation_senders_mod csm ON cm.id = csm.commendation_id
         WHERE cm.id IN ({placeholders}) AND cm.deleted = FALSE
@@ -610,15 +612,15 @@ def approve_and_parse_to_database(spreadsheet_id, sheet_name, DatabaseConnection
             return False
 
         commendations_data = [
-            (row[1], row[2], row[3], row[4], row[5], row[6])
+            (row[1], row[2], row[3], row[4], row[5], row[6], row[8])
             for row in commendations_info
         ]
 
         insert_commendation_query = '''
                                     INSERT INTO commendations
                                     (commendation_text, commendation_date, employee_to_id, employee_from_id, position, \
-                                     value_id)
-                                    VALUES (%s, %s, %s, %s, %s, %s)
+                                     value_id, branch)
+                                    VALUES (%s, %s, %s, %s, %s, %s, %s)
                                     RETURNING id \
                                     '''
 
@@ -642,7 +644,6 @@ def approve_and_parse_to_database(spreadsheet_id, sheet_name, DatabaseConnection
         update_query = f'''
             UPDATE commendations_mod 
             SET deleted = TRUE 
-            WHERE id IN ({placeholders})
         '''
         cursor.execute(update_query, ids_to_approve)
 

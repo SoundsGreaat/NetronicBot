@@ -175,6 +175,7 @@ def confirm_approve_commendations_handler(call):
                                   from_emp.name,
                                   from_emp.position,
                                   to_emp.telegram_user_id,
+                                  branch,
                                   com_sender.sender_name
                            FROM commendations_mod
                                     JOIN employees to_emp ON commendations_mod.employee_to_id = to_emp.id
@@ -186,7 +187,7 @@ def confirm_approve_commendations_handler(call):
                            ''', (id,))
             card_data = cursor.fetchone()
 
-            if com_sender := card_data[7]:
+            if com_sender := card_data[8]:
                 image = make_card(
                     card_data[0], card_data[1], card_data[2], card_data[3], com_sender, None
                 )

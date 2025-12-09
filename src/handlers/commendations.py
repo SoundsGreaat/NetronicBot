@@ -154,7 +154,7 @@ def show_commendation(call):
                      LEFT JOIN commendation_senders com_sender ON commendations.id = com_sender.commendation_id
             WHERE commendations.id = %s
             ''',
-        (commendation_id,)
+            (commendation_id,)
         )
         employee_name, employee_position, commendation_text, commendation_date, employee_from_name, \
             value_name, employee_from_position, sender_name = cursor.fetchone()
@@ -215,7 +215,25 @@ def confirm_delete_commendation(call):
 
 @bot.callback_query_handler(func=lambda call: call.data == 'send_commendation_mod')
 @authorized_only(user_type='users')
+def choose_branch(call):
+    if make_card_data.get(call.message.chat.id):
+        del make_card_data[call.message.chat.id]
+
+    markup = types.InlineKeyboardMarkup(row_width=1)
+    netronic_btn = types.InlineKeyboardButton(text='📘 Надіслати подяку NETRONIC',
+                                              callback_data='send_commendation_mod_netronic')
+    skiftech_btn = types.InlineKeyboardButton(text='🏮 Надіслати подяку SKIFTECH',
+                                              callback_data='send_commendation_mod_skiftech')
+    markup.add(netronic_btn, skiftech_btn)
+
+    bot.edit_message_text('🔍 Оберіть гілку:', call.message.chat.id,
+                                         call.message.message_id, reply_markup=markup)
+
+
+@bot.callback_query_handler(func=lambda call: call.data.startswith('send_commendation_mod_'))
+@authorized_only(user_type='users')
 def choose_sender(call):
+    branch = call.data.split('_')[-1]
     markup = types.InlineKeyboardMarkup(row_width=1)
     send_from_me_btn = types.InlineKeyboardButton(text='📩 Від мого імені', callback_data='thanks_from_me_mod')
     send_from_other_btn = types.InlineKeyboardButton(text='📩 Від департаменту/іншого співробітника',
@@ -225,6 +243,7 @@ def choose_sender(call):
     sent_message = bot.edit_message_text('🔍 Оберіть варіант надсилання подяки:', call.message.chat.id,
                                          call.message.message_id, reply_markup=markup)
 
+    make_card_data[call.message.chat.id]['branch'] = branch
     make_card_data[call.message.chat.id]['sent_message'] = sent_message
 
 
@@ -232,9 +251,6 @@ def choose_sender(call):
 @authorized_only(user_type='users')
 def thanks_search(call):
     process_in_progress[call.message.chat.id] = 'thanks_search_mod'
-
-    if make_card_data.get(call.message.chat.id):
-        del make_card_data[call.message.chat.id]
 
     cancel_btn = types.InlineKeyboardButton(text='❌ Скасувати', callback_data='cancel_send_thanks')
     markup = types.InlineKeyboardMarkup()
@@ -248,9 +264,6 @@ def thanks_search(call):
 @authorized_only(user_type='users')
 def thanks_send_sender(call):
     process_in_progress[call.message.chat.id] = 'thanks_send_sender_mod'
-
-    if make_card_data.get(call.message.chat.id):
-        del make_card_data[call.message.chat.id]
 
     cancel_btn = types.InlineKeyboardButton(text='❌ Скасувати', callback_data='cancel_send_thanks')
     markup = types.InlineKeyboardMarkup()
@@ -278,6 +291,7 @@ def thanks_send_sender_ans(message):
     bot.edit_message_text(f'✅ Ім\'я відправника встановлено як: {sender_name}\n'
                           f'📝 Введіть ім\'я співробітника якому хочете надіслати подяку:',
                           message.chat.id, sent_message.message_id, reply_markup=markup)
+
 
 @bot.message_handler(func=lambda message: message.text not in button_names and process_in_progress.get(
     message.chat.id) == 'thanks_search_mod')
@@ -419,6 +433,7 @@ def confirm_send_thanks(call):
     commendation_text = make_card_data[call.message.chat.id]['thanks_text']
     employee_position = make_card_data[call.message.chat.id]['employee_position']
     value_id = make_card_data[call.message.chat.id]['value']
+    branch = make_card_data[call.message.chat.id]['branch']
     commendation_date = datetime.datetime.now().date()
 
     with DatabaseConnection() as (conn, cursor):
@@ -427,9 +442,9 @@ def confirm_send_thanks(call):
         cursor.execute(
             'INSERT INTO commendations_mod ('
             'employee_to_id, employee_from_id, commendation_text, commendation_date, position, '
-            'value_id) '
-            'VALUES (%s, %s, %s, %s, %s, %s) RETURNING id',
-            (employee_id, sender_id, commendation_text, commendation_date, employee_position, value_id)
+            'value_id, branch) '
+            'VALUES (%s, %s, %s, %s, %s, %s, %s) RETURNING id',
+            (employee_id, sender_id, commendation_text, commendation_date, employee_position, value_id, branch)
         )
         commendation_id = cursor.fetchone()[0]
         conn.commit()
