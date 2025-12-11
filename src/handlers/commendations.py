@@ -146,7 +146,8 @@ def show_commendation(call):
                    e_from.name,
                    values.name,
                    e_from.position,
-                   com_sender.sender_name
+                   com_sender.sender_name,
+                   branch
             FROM commendations
                      JOIN employees e_to ON employee_to_id = e_to.id
                      JOIN employees e_from ON employee_from_id = e_from.id
@@ -157,7 +158,7 @@ def show_commendation(call):
             (commendation_id,)
         )
         employee_name, employee_position, commendation_text, commendation_date, employee_from_name, \
-            value_name, employee_from_position, sender_name = cursor.fetchone()
+            value_name, employee_from_position, sender_name, branch = cursor.fetchone()
 
     formatted_date = commendation_date.strftime('%d.%m.%Y')
 
@@ -170,7 +171,7 @@ def show_commendation(call):
             employee_from_position = None
 
         image = make_card(employee_name, employee_position, commendation_text, value_name, employee_from_name,
-                          employee_from_position)
+                          employee_from_position, branch=branch)
 
     message_text = (f'👨‍💻 <b>{employee_name}</b> | {formatted_date}\n\nВід <b>{employee_from_name}</b>'
                     f'\nЦінність: <b>{value_name if value_name else "Не вказано"}</b>'
@@ -405,7 +406,8 @@ def send_thanks_name_mod(message, position_changed=False):
             make_card_data[message.chat.id]['thanks_text'],
             value_name,
             employee_from_name,
-            employee_from_position
+            employee_from_position,
+            branch=make_card_data[message.chat.id]['branch']
         )
 
         make_card_data[message.chat.id]['image'] = image

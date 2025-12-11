@@ -127,6 +127,7 @@ def proceed_mass_message(message):
     bot.send_message(message.chat.id, '✔️ Повідомлення розіслано.')
     del process_in_progress[message.chat.id]
 
+
 # TODO Temporarily disabled old button handler
 # @bot.message_handler(func=lambda message: message.text in old_button_names)
 # @authorized_only(user_type='users')
@@ -189,12 +190,13 @@ def confirm_approve_commendations_handler(call):
 
             if com_sender := card_data[8]:
                 image = make_card(
-                    card_data[0], card_data[1], card_data[2], card_data[3], com_sender, None
+                    card_data[0], card_data[1], card_data[2], card_data[3], com_sender, None, branch=card_data[7]
                 )
 
             else:
                 image = make_card(
-                    card_data[0], card_data[1], card_data[2], card_data[3], card_data[4], card_data[5]
+                    card_data[0], card_data[1], card_data[2], card_data[3], card_data[4], card_data[5],
+                    branch=card_data[7]
                 )
 
             recipient_id = card_data[6]
