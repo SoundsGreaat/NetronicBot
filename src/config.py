@@ -4,18 +4,25 @@ from collections import defaultdict
 from openai import OpenAI
 from telebot import TeleBot
 
-FONT_EVOLVENTA = '../assets/fonts/Evolventa-Regular.ttf'
-FONT_EVOLVENTA_BOLD = '../assets/fonts/Evolventa-Bold.ttf'
-FONT_PACIFICO = '../assets/fonts/Pacifico-Regular.ttf'
-FONT_NOTO = '../assets/fonts/NotoEmoji-VariableFont_wght.ttf'
-FONT_ARIAL = '../assets/fonts/ARIAL.TTF'
-FONT_ARIAL_BOLD = '../assets/fonts/ARIALBD.TTF'
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-COMMENDATION_TEMPLATE = '../assets/images/commendation_template_new_empty.png'
-COMMENDATION_TEMPLATE_OLD = '../assets/images/commendation_template.png'
+FONT_EVOLVENTA = os.path.join(BASE_DIR, 'assets/fonts/Evolventa-Regular.ttf')
+FONT_EVOLVENTA_BOLD = os.path.join(BASE_DIR, 'assets/fonts/Evolventa-Bold.ttf')
+FONT_PACIFICO = os.path.join(BASE_DIR, 'assets/fonts/Pacifico-Regular.ttf')
+FONT_NOTO = os.path.join(BASE_DIR, 'assets/fonts/NotoEmoji-VariableFont_wght.ttf')
+FONT_ARIAL = os.path.join(BASE_DIR, 'assets/fonts/ARIAL.TTF')
+FONT_ARIAL_BOLD = os.path.join(BASE_DIR, 'assets/fonts/ARIALBD.TTF')
+FONT_MANROPE = os.path.join(BASE_DIR, 'assets/fonts/Manrope-Regular.ttf')
+FONT_MANROPE_BOLD = os.path.join(BASE_DIR, 'assets/fonts/Manrope-Bold.ttf')
+FONT_ROBOTO = os.path.join(BASE_DIR, 'assets/fonts/Roboto-Regular.ttf')
+FONT_ROBOTO_BOLD = os.path.join(BASE_DIR, 'assets/fonts/Roboto-Bold.ttf')
 
-SESSION_ENCRYPTED_PATH = '../sessions/userbot_session_encrypted'
-SESSION_DECRYPTED_PATH = '../sessions/userbot_session.session'
+COMMENDATION_TEMPLATE_NETRONIC = os.path.join(BASE_DIR, 'assets/images/commendation_template_netronic.png')
+COMMENDATION_TEMPLATE_SKIFTECH = os.path.join(BASE_DIR, 'assets/images/commendation_template_skiftech.png')
+COMMENDATION_TEMPLATE_OLD = os.path.join(BASE_DIR, 'assets/images/commendation_template.png')
+
+SESSION_ENCRYPTED_PATH = os.path.join(BASE_DIR, 'sessions/userbot_session_encrypted')
+SESSION_DECRYPTED_PATH = os.path.join(BASE_DIR, 'sessions/userbot_session.session')
 
 BIRTHDAY_NOTIFICATIONS_USER_IDS = os.getenv('BIRTHDAY_NOTIFICATION_USER_IDS')
 
