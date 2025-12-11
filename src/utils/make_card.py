@@ -9,7 +9,8 @@ from config import FONT_EVOLVENTA, FONT_EVOLVENTA_BOLD, FONT_PACIFICO, FONT_NOTO
     COMMENDATION_TEMPLATE_NETRONIC, COMMENDATION_TEMPLATE_SKIFTECH
 
 
-def draw_text(draw, text, font_size, center_position, color=(0, 0, 0), bold=False, font='primary', max_width=1200, max_rows=2):
+def draw_text(draw, text, font_size, center_position, color=(0, 0, 0), bold=False, font='primary',
+              max_width=1200, max_rows=2, move_down=False):
     if not text:
         return
 
@@ -67,10 +68,15 @@ def draw_text(draw, text, font_size, center_position, color=(0, 0, 0), bold=Fals
         emoji_font = ImageFont.truetype(FONT_NOTO, font_size)
         lines = split_text_lines(clean_text, main_font, max_width)
 
-    total_height = sum(draw.textbbox((0, 0), line, font=main_font)[3] for line in lines)
-    y = center_position[1] - total_height // 2
-    if len(lines) == 2:
-        y += 5
+    if move_down:
+        # Починаємо з center_position[1] і рухаємось вниз
+        y = center_position[1]
+    else:
+        # Центруємо текст відносно center_position[1]
+        total_height = sum(draw.textbbox((0, 0), line, font=main_font)[3] for line in lines)
+        y = center_position[1] - total_height // 2
+        if len(lines) == 2:
+            y += 5
 
     for line in lines:
         chunks = split_text_with_emojis(line)
@@ -99,12 +105,12 @@ def make_card(name, position, thank_you_text, value_text=None, from_name=None, f
         draw = ImageDraw.Draw(image)
 
         draw_text(draw, position.upper(), small_font_size, (1000, 485), bold=True)
-        draw_text(draw, name, big_font_size, (1000, 620))
+        draw_text(draw, name, big_font_size, (1000, 620), max_rows=1, max_width=1300)
         draw_text(draw, value_text, small_font_size, (1000, 785))
         draw_text(draw, thank_you_text.upper(), small_font_size, (1000, 888), bold=True)
         draw_text(draw, f'{datetime.now().strftime("%d.%m.%Y")}', small_font_size, (1737, 1200))
         draw_text(draw, from_name.upper(), small_font_size, (1000, 1230))
-        draw_text(draw, from_position, small_font_size, (1000, 1305), max_width=400)
+        draw_text(draw, from_position, small_font_size, (1000, 1280), max_width=400, move_down=True)
 
     else:
         image_path = COMMENDATION_TEMPLATE_SKIFTECH
@@ -112,14 +118,15 @@ def make_card(name, position, thank_you_text, value_text=None, from_name=None, f
         draw = ImageDraw.Draw(image)
 
         draw_text(draw, position.upper(), small_font_size, (1023, 430), font='secondary', max_width=370)
-        draw_text(draw, name, big_font_size, (1023, 610), font='secondary')
+        draw_text(draw, name, big_font_size, (1023, 610), font='secondary', max_rows=1, max_width=1300)
         draw_text(draw, value_text, small_font_size, (1023, 745), font='secondary')
-        draw_text(draw, thank_you_text.upper(), small_font_size, (1023, 830), bold=True, font='secondary',
-                  max_width=750, max_rows=3)
+        draw_text(draw, thank_you_text.upper(), small_font_size, (1023, 810), bold=True, font='secondary',
+                  max_width=750, max_rows=2, move_down=True)
         draw_text(draw, f'{datetime.now().strftime("%d.%m.%Y")}', small_font_size, (460, 170), color=(217, 217, 217),
                   font='secondary')
-        draw_text(draw, from_name, small_font_size, (1731, 1200), font='secondary')
-        draw_text(draw, from_position, small_font_size, (1731, 1270), max_width=400, font='secondary')
+        draw_text(draw, from_name, small_font_size, (1731, 1200), font='secondary', bold=True)
+        draw_text(draw, from_position, small_font_size, (1731, 1250), max_width=400, font='secondary',
+                  move_down=True)
 
     return image
 
