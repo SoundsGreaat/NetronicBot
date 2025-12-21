@@ -15,26 +15,35 @@ def update_employees_in_sheet(spreadsheet_id, sheet_name, DatabaseConnection):
     service = build('sheets', 'v4', credentials=creds)
 
     sheet = service.spreadsheets()
-    range_name = f'{sheet_name}!A:I'
-    result = sheet.values().get(spreadsheetId=spreadsheet_id, range=range_name).execute()
-    values = result.get('values', [])
 
-    headers = values[0] if values else []
+    data_range = f'{sheet_name}!A2:J'
 
     sheet.values().clear(
         spreadsheetId=spreadsheet_id,
-        range=range_name,
+        range=data_range,
         body={}
     ).execute()
 
     with DatabaseConnection() as (conn, cursor):
         cursor.execute(
-            'SELECT emp.name, dep.name, inter.name, sub.name, position, telegram_username, email, phone, date_of_birth '
-            'FROM employees emp '
-            'JOIN sub_departments sub ON emp.sub_department_id = sub.id '
-            'JOIN departments dep ON sub.department_id = dep.id '
-            'LEFT JOIN intermediate_departments inter ON sub.intermediate_department_id = inter.id '
-            'ORDER BY dep.name, sub.name'
+            '''
+            SELECT emp.name,
+                   dep.name,
+                   inter.name,
+                   sub.name,
+                   position,
+                   telegram_username,
+                   email,
+                   phone,
+                   work_phone,
+                   date_of_birth
+            FROM employees emp
+                     JOIN sub_departments sub ON emp.sub_department_id = sub.id
+                     JOIN departments dep ON sub.department_id = dep.id
+                     LEFT JOIN intermediate_departments inter
+                               ON sub.intermediate_department_id = inter.id
+            ORDER BY dep.name, sub.name
+            '''
         )
         employees_info = cursor.fetchall()
 
@@ -44,11 +53,11 @@ def update_employees_in_sheet(spreadsheet_id, sheet_name, DatabaseConnection):
     ]
 
     body = {
-        'values': [headers] + processed_info
+        'values': processed_info
     }
     sheet.values().update(
         spreadsheetId=spreadsheet_id,
-        range=range_name,
+        range=data_range,
         valueInputOption='RAW',
         body=body
     ).execute()
