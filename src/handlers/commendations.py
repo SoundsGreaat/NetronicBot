@@ -221,9 +221,9 @@ def choose_branch(call):
         del make_card_data[call.message.chat.id]
 
     markup = types.InlineKeyboardMarkup(row_width=1)
-    netronic_btn = types.InlineKeyboardButton(text='📘 Надіслати подяку NETRONIC',
+    netronic_btn = types.InlineKeyboardButton(text='📘 Надіслати подяку в дизайні NETRONIC',
                                               callback_data='send_commendation_mod_netronic')
-    skiftech_btn = types.InlineKeyboardButton(text='🏮 Надіслати подяку SKIFTECH',
+    skiftech_btn = types.InlineKeyboardButton(text='🏮 Надіслати подяку в дизайні SKIFTECH',
                                               callback_data='send_commendation_mod_skiftech')
     markup.add(netronic_btn, skiftech_btn)
 
