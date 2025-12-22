@@ -7,7 +7,7 @@ from api.feedback_api import app
 
 
 def run_api():
-    uvicorn.run(app, host="0.0.0.0", port=8000, reload=False)
+    uvicorn.run(app, host="0.0.0.0", port=80, reload=False)
 
 
 def start_api_in_thread():
