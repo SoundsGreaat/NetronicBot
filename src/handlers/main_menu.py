@@ -28,7 +28,7 @@ def send_business_processes(message, edit_message=False):
     )
 
     office_equipment_btn = types.InlineKeyboardButton(
-        text='🖨️ Забезпечення офісу',
+        text='✏️ Забезпечення офісу',
         callback_data='b_process_office_equipment'
     )
 
@@ -49,7 +49,7 @@ def send_business_processes(message, edit_message=False):
 
     helpdesk_btn = types.InlineKeyboardButton(
         text='💻 HelpDesk IT (звернення до сист. адміністраторів)',
-        callback_data='b_process_helpdesk'
+        callback_data='helpdesk_it'
     )
 
     markup = types.InlineKeyboardMarkup(row_width=1)
