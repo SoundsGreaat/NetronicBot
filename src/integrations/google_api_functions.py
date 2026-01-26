@@ -759,7 +759,6 @@ def create_commendation_statistics_2025(spreadsheet_id, DatabaseConnection):
                                                   scopes=['https://www.googleapis.com/auth/spreadsheets'])
     service = build('sheets', 'v4', credentials=creds)
 
-    # Указываем конкретный год
     target_year = 2025
     sheet_name = f"Статистика за {target_year} рік"
 
@@ -782,7 +781,6 @@ def create_commendation_statistics_2025(spreadsheet_id, DatabaseConnection):
             raise e
 
     with DatabaseConnection() as (conn, cursor):
-        # В запросе теперь фильтруем строго по 2025 году
         cursor.execute('''
                        SELECT e.name,
                               COUNT(CASE WHEN c.employee_from_id = e.id THEN 1 END) as sent_count,
@@ -808,4 +806,4 @@ def create_commendation_statistics_2025(spreadsheet_id, DatabaseConnection):
         body=body
     ).execute()
 
-    print(f'Статистика за {target_year} год выгружена на лист "{sheet_name}".')
+    logger.info('Full year commendation statistics created/updated.')
