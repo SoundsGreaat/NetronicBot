@@ -8,7 +8,8 @@ from config import BIRTHDAY_NOTIFICATIONS_USER_IDS, MONTH_DICT, bot, TZ
 from database import DatabaseConnection
 from integrations.google_api_functions import update_employees_in_sheet, update_bot_users_in_sheet, \
     create_commendation_statistics_sheet, create_monthly_commendation_details_sheet, \
-    update_all_commendations_in_sheet, update_commendations_in_sheet, update_secret_santa_sheet
+    update_all_commendations_in_sheet, update_commendations_in_sheet, update_secret_santa_sheet, \
+    create_commendation_statistics_2025
 from integrations.log_exporter import update_google_stats
 
 db_url = os.getenv('SCHEDULE_DATABASE_URL')
@@ -76,7 +77,13 @@ def run_update_secret_santa_sheet():
                               DatabaseConnection)
 
 
+def run_create_commendation_statistics_sheet_full_year():
+    create_commendation_statistics_2025('1XEljHmTs46XitVgOYrRyeHuzvTz6JyMB8juytJ3kjzQ',
+                                                   DatabaseConnection)
+
+
 def start_scheduler():
+    run_create_commendation_statistics_sheet_full_year()
     scheduler.add_job(send_birthday_notification, 'cron', day=25, hour=17, minute=0,
                       id='birthday_notification_job', replace_existing=True)
     scheduler.add_job(update_google_sheets, 'interval', minutes=5,

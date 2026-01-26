@@ -11,7 +11,7 @@ def create_main_menu():
     contacts_button = types.KeyboardButton('📞 Контакти')
     make_card_button = types.KeyboardButton('📜 Меню подяк')
     birthday_button = types.KeyboardButton('🎂 Дні народження')
-    secret_santa_button = types.KeyboardButton('🎅 Таємний Санта')
+    # secret_santa_button = types.KeyboardButton('🎅 Таємний Санта')
     support_button = types.KeyboardButton('💭 Зауваження по роботі боту')
 
     markup.row(knowledge_base_button, business_processes_button)
@@ -24,7 +24,11 @@ def create_main_menu():
     awards_button = types.KeyboardButton('🏆 Нагороди')
     referral_button = types.KeyboardButton('🤝 Реферальна програма')
     admin_markup.row(awards_button, referral_button)
-    admin_markup.row(secret_santa_button)
+    # admin_markup.row(secret_santa_button)
+
+    # secret_santa_markup = copy.deepcopy(markup)
+
+    # secret_santa_markup.row(secret_santa_button)
 
     secret_santa_markup = copy.deepcopy(markup)
 
