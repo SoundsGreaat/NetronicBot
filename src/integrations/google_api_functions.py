@@ -751,3 +751,61 @@ def update_secret_santa_sheet(spreadsheet_id, sheet_name, DatabaseConnection):
     ).execute()
 
     logger.info('Secret Santa data updated in sheet.')
+
+
+def create_commendation_statistics_2025(spreadsheet_id, DatabaseConnection):
+    creds_info = json.loads(os.getenv('GOOGLE_API_CREDENTIALS'))
+    creds = Credentials.from_service_account_info(creds_info,
+                                                  scopes=['https://www.googleapis.com/auth/spreadsheets'])
+    service = build('sheets', 'v4', credentials=creds)
+
+    # Указываем конкретный год
+    target_year = 2025
+    sheet_name = f"Статистика за {target_year} рік"
+
+    try:
+        sheet_body = {
+            'requests': [{
+                'addSheet': {
+                    'properties': {
+                        'title': sheet_name
+                    }
+                }
+            }]
+        }
+        service.spreadsheets().batchUpdate(
+            spreadsheetId=spreadsheet_id,
+            body=sheet_body
+        ).execute()
+    except Exception as e:
+        if "already exists" not in str(e):
+            raise e
+
+    with DatabaseConnection() as (conn, cursor):
+        # В запросе теперь фильтруем строго по 2025 году
+        cursor.execute('''
+                       SELECT e.name,
+                              COUNT(CASE WHEN c.employee_from_id = e.id THEN 1 END) as sent_count,
+                              COUNT(CASE WHEN c.employee_to_id = e.id THEN 1 END)   as received_count
+                       FROM employees e
+                                INNER JOIN commendations c ON (c.employee_from_id = e.id OR c.employee_to_id = e.id)
+                           AND EXTRACT(YEAR FROM c.commendation_date) = %s
+                       GROUP BY e.id, e.name
+                       ORDER BY sent_count DESC
+                       ''', (target_year,))
+        statistics = cursor.fetchall()
+
+    headers = ['Employee Name', 'Sent Commendations', 'Received Commendations']
+    data = [headers] + [[row[0], row[1], row[2]] for row in statistics]
+
+    range_name = f'{sheet_name}!A:C'
+    body = {'values': data}
+
+    service.spreadsheets().values().update(
+        spreadsheetId=spreadsheet_id,
+        range=range_name,
+        valueInputOption='RAW',
+        body=body
+    ).execute()
+
+    print(f'Статистика за {target_year} год выгружена на лист "{sheet_name}".')
