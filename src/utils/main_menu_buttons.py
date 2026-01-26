@@ -30,13 +30,13 @@ def create_main_menu():
 
     # secret_santa_markup.row(secret_santa_button)
 
-    secret_santa_markup = copy.deepcopy(markup)
+    # secret_santa_markup = copy.deepcopy(markup)
 
-    secret_santa_markup.row(secret_santa_button)
+    # secret_santa_markup.row(secret_santa_button)
 
-    return markup, admin_markup, secret_santa_markup
+    return markup, admin_markup
 
 
-main_menu, admin_menu, secret_santa_menu = create_main_menu()
+main_menu, admin_menu = create_main_menu()
 button_names = [btn['text'] for row in admin_menu.keyboard for btn in row]
-old_button_names = ['🎓 База знань']
+old_button_names = ['🎓 База знань', '🎅 Таємний Санта']

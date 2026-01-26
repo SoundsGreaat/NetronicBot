@@ -11,7 +11,6 @@ from database import DatabaseConnection, update_authorized_users
 from handlers.authorization import authorized_only
 from integrations.google_api_functions import read_credentials_from_sheet, approve_and_parse_to_database
 from integrations.telethon_functions import send_photo
-from utils.main_menu_buttons import main_menu, admin_menu, button_names, old_button_names, secret_santa_menu
 from utils.logger import logger
 from utils.main_menu_buttons import main_menu, admin_menu, button_names, old_button_names
 from utils.make_card import make_card
@@ -128,13 +127,12 @@ def proceed_mass_message(message):
     del process_in_progress[message.chat.id]
 
 
-# TODO Temporarily disabled old button handler
-# @bot.message_handler(func=lambda message: message.text in old_button_names)
-# @authorized_only(user_type='users')
-# def old_button_handler(message):
-#     bot.send_message(message.chat.id, 'Ця кнопка була видалена або замінена.'
-#                                       '\nБудь ласка, скористайтесь меню нижче.',
-#                      reply_markup=main_menu)
+@bot.message_handler(func=lambda message: message.text in old_button_names)
+@authorized_only(user_type='users')
+def old_button_handler(message):
+    bot.send_message(message.chat.id, 'Ця кнопка була видалена або замінена.'
+                                      '\nБудь ласка, скористайтесь меню нижче.',
+                     reply_markup=main_menu)
 
 
 @bot.message_handler(commands=['approve_commendations'])
