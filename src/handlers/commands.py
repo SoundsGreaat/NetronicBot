@@ -11,6 +11,7 @@ from database import DatabaseConnection, update_authorized_users
 from handlers.authorization import authorized_only
 from integrations.google_api_functions import read_credentials_from_sheet, approve_and_parse_to_database
 from integrations.telethon_functions import send_photo
+from utils.main_menu_buttons import main_menu, admin_menu, button_names, old_button_names, secret_santa_menu
 from utils.logger import logger
 from utils.main_menu_buttons import main_menu, admin_menu, button_names, old_button_names
 from utils.make_card import make_card
@@ -127,12 +128,13 @@ def proceed_mass_message(message):
     del process_in_progress[message.chat.id]
 
 
-@bot.message_handler(func=lambda message: message.text in old_button_names)
-@authorized_only(user_type='users')
-def old_button_handler(message):
-    bot.send_message(message.chat.id, 'Ця кнопка була видалена або замінена.'
-                                      '\nБудь ласка, скористайтесь меню нижче.',
-                     reply_markup=main_menu)
+# TODO Temporarily disabled old button handler
+# @bot.message_handler(func=lambda message: message.text in old_button_names)
+# @authorized_only(user_type='users')
+# def old_button_handler(message):
+#     bot.send_message(message.chat.id, 'Ця кнопка була видалена або замінена.'
+#                                       '\nБудь ласка, скористайтесь меню нижче.',
+#                      reply_markup=main_menu)
 
 
 @bot.message_handler(commands=['approve_commendations'])
@@ -174,6 +176,7 @@ def confirm_approve_commendations_handler(call):
                                   from_emp.name,
                                   from_emp.position,
                                   to_emp.telegram_user_id,
+                                  branch,
                                   com_sender.sender_name
                            FROM commendations_mod
                                     JOIN employees to_emp ON commendations_mod.employee_to_id = to_emp.id
@@ -185,14 +188,15 @@ def confirm_approve_commendations_handler(call):
                            ''', (id,))
             card_data = cursor.fetchone()
 
-            if com_sender := card_data[7]:
+            if com_sender := card_data[8]:
                 image = make_card(
-                    card_data[0], card_data[1], card_data[2], card_data[3], com_sender, None
+                    card_data[0], card_data[1], card_data[2], card_data[3], com_sender, None, branch=card_data[7]
                 )
 
             else:
                 image = make_card(
-                    card_data[0], card_data[1], card_data[2], card_data[3], card_data[4], card_data[5]
+                    card_data[0], card_data[1], card_data[2], card_data[3], card_data[4], card_data[5],
+                    branch=card_data[7]
                 )
 
             recipient_id = card_data[6]
@@ -201,13 +205,7 @@ def confirm_approve_commendations_handler(call):
                 bot.send_photo(recipient_id, image, caption='📩 Вам було надіслано подяку.')
             except apihelper.ApiTelegramException as e:
                 if e.error_code == 400 and "chat not found" in e.description:
-                    bot.send_message(call.message.chat.id, f'🚫 Користувача <b>{card_data[0]}</b> не знайдено. '
-                                                           f'Надсилаю подяку як юзербот.',
-                                     parse_mode='HTML')
-                    try:
-                        asyncio.run(send_photo(recipient_id, image, caption='📩 Вам надіслано подяку.'))
-                    except Exception as e:
-                        logger.error(f'Error sending photo via userbot: {e}')
+                    logger.warning(f'Cannot send commendation to user {recipient_id}: chat not found.')
 
             bot.send_photo(call.message.chat.id, image, caption='✅ Подяку надіслано.')
     scheduler.add_job(run_create_monthly_commendation_details_sheet, trigger='date', run_date=datetime.datetime.now())

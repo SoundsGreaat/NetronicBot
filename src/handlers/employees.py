@@ -41,7 +41,7 @@ def add_employee(call):
     message.chat.id) == 'add_employee')
 @authorized_only(user_type='admins')
 def proceed_add_employee_data(message, delete_user_message=True, skip_phone=False, skip_email=False,
-                              skip_username=False, skip_dob=False):
+                              skip_username=False, skip_dob=False, work_phone=False, personal_phone=False):
     finish_function = False
     department_id = add_employee_data[message.chat.id]['department_id']
     sub_department_id = add_employee_data[message.chat.id]['sub_department_id']
@@ -49,6 +49,9 @@ def proceed_add_employee_data(message, delete_user_message=True, skip_phone=Fals
     intermediate_department_id = add_employee_data[message.chat.id]['intermediate_department_id']
 
     skip_btn = None
+    work_phone_btn = None
+    personal_phone_btn = None
+    phone_type = 'phone'
 
     if not add_employee_data[message.chat.id].get('name'):
         if re.match(r'^[А-ЯІЇЄҐа-яіїєґ\'\s]+$', message.text):
@@ -68,20 +71,30 @@ def proceed_add_employee_data(message, delete_user_message=True, skip_phone=Fals
             skip_btn = types.InlineKeyboardButton(text='⏭️ Пропустити', callback_data='skip_phone')
 
     elif not add_employee_data[message.chat.id].get('phone'):
-        message_text = '📧 Введіть email нового співробітника:'
         if skip_phone:
             add_employee_data[message.chat.id]['phone'] = 'skip'
+            add_employee_data[message.chat.id]['phone_type'] = 'skip'
+            message_text = '📧 Введіть email нового співробітника:'
         else:
+            message_text = f'📞 {message.text} це робочий чи особистий телефон?'
             normalized_phone = normalize_phone_number(message.text)
             if normalized_phone:
                 add_employee_data[message.chat.id]['phone'] = normalized_phone
+                work_phone_btn = types.InlineKeyboardButton(text='📞 Робочий телефон', callback_data='work_phone')
+                personal_phone_btn = types.InlineKeyboardButton(text='📱 Особистий телефон',
+                                                                callback_data='personal_phone')
             else:
                 message_text = ('🚫 Номер телефону введено невірно.'
                                 '\nВведіть номер телефону (для України можна без коду країни):')
-        if add_employee_data[message.chat.id].get('phone'):
-            skip_btn = types.InlineKeyboardButton(text='⏭️ Пропустити', callback_data='skip_email')
 
-    elif not add_employee_data[message.chat.id].get('email'):
+    elif not add_employee_data[message.chat.id].get('phone_type'):
+        if work_phone or personal_phone:
+            phone_type = 'work_phone' if work_phone else 'phone'
+            add_employee_data[message.chat.id]['phone_type'] = phone_type
+        message_text = '📧 Введіть email нового співробітника:'
+        skip_btn = types.InlineKeyboardButton(text='⏭️ Пропустити', callback_data='skip_email')
+
+    elif not add_employee_data[message.chat.id].get('email') and add_employee_data[message.chat.id].get('phone_type'):
         if skip_email:
             add_employee_data[message.chat.id]['email'] = 'skip'
         else:
@@ -163,10 +176,17 @@ def proceed_add_employee_data(message, delete_user_message=True, skip_phone=Fals
                                      add_employee_data[message.chat.id]['email'])
 
         with DatabaseConnection() as (conn, cursor):
+            phone_type = add_employee_data[message.chat.id].get('phone_type', 'phone')
+            if phone_type == 'skip':
+                phone_type = 'phone'
+            query = (
+                f'INSERT INTO employees (name, {phone_type}, position, telegram_username, sub_department_id, '
+                'telegram_user_id, email, date_of_birth, crm_id) '
+                'VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s) RETURNING id'
+            )
+
             cursor.execute(
-                'INSERT INTO employees (name, phone, position, telegram_username, sub_department_id, '
-                'telegram_user_id, email, date_of_birth,crm_id) '
-                'VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s) RETURNING id',
+                query,
                 (add_employee_data[message.chat.id]['name'],
                  add_employee_data[message.chat.id]['phone'],
                  add_employee_data[message.chat.id]['position'],
@@ -175,10 +195,14 @@ def proceed_add_employee_data(message, delete_user_message=True, skip_phone=Fals
                  add_employee_data[message.chat.id]['telegram_user_id'],
                  add_employee_data[message.chat.id]['email'],
                  add_employee_data[message.chat.id]['date_of_birth'],
-                 crm_id))
+                 crm_id)
+            )
+
             employee_id = cursor.fetchone()[0]
             conn.commit()
-        message_text = f'✅ Співробітник <b>{add_employee_data[message.chat.id]["name"]}</b> доданий до бази даних та CRM системи.'
+
+        message_text = (f'✅ Співробітник <b>{add_employee_data[message.chat.id]["name"]}</b> доданий до бази даних та '
+                        f'CRM системи.')
         update_authorized_users(authorized_ids)
         finish_function = True
         log_text = f'Employee {employee_id} added by @{message.from_user.username}.'
@@ -189,6 +213,8 @@ def proceed_add_employee_data(message, delete_user_message=True, skip_phone=Fals
                                                           f'{intermediate_department_id}_{sub_department_id}')
     markup = types.InlineKeyboardMarkup()
     markup.add(skip_btn) if skip_btn else None
+    markup.add(work_phone_btn) if work_phone_btn else None
+    markup.add(personal_phone_btn) if personal_phone_btn else None
     markup.add(cancel_btn) if not finish_function else None
     saved_message = add_employee_data[message.chat.id]['saved_message']
     bot.delete_message(message.chat.id, saved_message.message_id)
@@ -202,6 +228,18 @@ def proceed_add_employee_data(message, delete_user_message=True, skip_phone=Fals
         send_profile(message,
                      call_data=f'profile_{additional_instance}_{department_id}_{intermediate_department_id}_'
                                f'{sub_department_id}_{employee_id}')
+
+
+@bot.callback_query_handler(func=lambda call: call.data == 'work_phone')
+@authorized_only(user_type='admins')
+def work_phone(call):
+    proceed_add_employee_data(call.message, delete_user_message=False, work_phone=True)
+
+
+@bot.callback_query_handler(func=lambda call: call.data == 'personal_phone')
+@authorized_only(user_type='admins')
+def personal_phone(call):
+    proceed_add_employee_data(call.message, delete_user_message=False, personal_phone=True)
 
 
 @bot.callback_query_handler(func=lambda call: call.data == 'skip_phone')

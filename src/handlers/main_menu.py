@@ -28,7 +28,7 @@ def send_business_processes(message, edit_message=False):
     )
 
     office_equipment_btn = types.InlineKeyboardButton(
-        text='💻 Забезпечення офісу',
+        text='✏️ Забезпечення офісу',
         callback_data='b_process_office_equipment'
     )
 
@@ -47,6 +47,11 @@ def send_business_processes(message, edit_message=False):
         url='https://docs.google.com/forms/d/e/1FAIpQLScJlOaWdUt4wdQZVlUa2PB1c7PXEDdPShJ2bpWhrTmVRqnWQw/viewform'
     )
 
+    helpdesk_btn = types.InlineKeyboardButton(
+        text='💻 HelpDesk IT (звернення до сист. адміністраторів)',
+        callback_data='helpdesk_it'
+    )
+
     markup = types.InlineKeyboardMarkup(row_width=1)
     markup.add(
         personnel_management_btn,
@@ -54,7 +59,8 @@ def send_business_processes(message, edit_message=False):
         office_equipment_btn,
         hr_btn,
         law_department_btn,
-        business_initiative_btn
+        business_initiative_btn,
+        helpdesk_btn
     )
     if edit_message:
         bot.edit_message_text('🔍 Оберіть бізнес-процес для перегляду:', message.chat.id, message.message_id,

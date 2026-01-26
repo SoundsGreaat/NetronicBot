@@ -15,26 +15,35 @@ def update_employees_in_sheet(spreadsheet_id, sheet_name, DatabaseConnection):
     service = build('sheets', 'v4', credentials=creds)
 
     sheet = service.spreadsheets()
-    range_name = f'{sheet_name}!A:I'
-    result = sheet.values().get(spreadsheetId=spreadsheet_id, range=range_name).execute()
-    values = result.get('values', [])
 
-    headers = values[0] if values else []
+    data_range = f'{sheet_name}!A2:J'
 
     sheet.values().clear(
         spreadsheetId=spreadsheet_id,
-        range=range_name,
+        range=data_range,
         body={}
     ).execute()
 
     with DatabaseConnection() as (conn, cursor):
         cursor.execute(
-            'SELECT emp.name, dep.name, inter.name, sub.name, position, telegram_username, email, phone, date_of_birth '
-            'FROM employees emp '
-            'JOIN sub_departments sub ON emp.sub_department_id = sub.id '
-            'JOIN departments dep ON sub.department_id = dep.id '
-            'LEFT JOIN intermediate_departments inter ON sub.intermediate_department_id = inter.id '
-            'ORDER BY dep.name, sub.name'
+            '''
+            SELECT emp.name,
+                   dep.name,
+                   inter.name,
+                   sub.name,
+                   position,
+                   telegram_username,
+                   email,
+                   phone,
+                   work_phone,
+                   date_of_birth
+            FROM employees emp
+                     JOIN sub_departments sub ON emp.sub_department_id = sub.id
+                     JOIN departments dep ON sub.department_id = dep.id
+                     LEFT JOIN intermediate_departments inter
+                               ON sub.intermediate_department_id = inter.id
+            ORDER BY dep.name, sub.name
+            '''
         )
         employees_info = cursor.fetchall()
 
@@ -44,11 +53,11 @@ def update_employees_in_sheet(spreadsheet_id, sheet_name, DatabaseConnection):
     ]
 
     body = {
-        'values': [headers] + processed_info
+        'values': processed_info
     }
     sheet.values().update(
         spreadsheetId=spreadsheet_id,
-        range=range_name,
+        range=data_range,
         valueInputOption='RAW',
         body=body
     ).execute()
@@ -156,11 +165,8 @@ def update_commendations_mod_in_sheet(spreadsheet_id, sheet_name, DatabaseConnec
     service = build('sheets', 'v4', credentials=creds)
 
     sheet = service.spreadsheets()
-    range_name = f'{sheet_name}!A:F' if not remove_all else f'{sheet_name}!A:G'
-    result = sheet.values().get(spreadsheetId=spreadsheet_id, range=range_name).execute()
-    values = result.get('values', [])
 
-    headers = values[0] if values else []
+    range_name = f'{sheet_name}!A2:G' if remove_all else f'{sheet_name}!A2:F'
 
     with DatabaseConnection() as (conn, cursor):
         cursor.execute(
@@ -181,7 +187,7 @@ def update_commendations_mod_in_sheet(spreadsheet_id, sheet_name, DatabaseConnec
     ]
 
     body = {
-        'values': [headers] + processed_info if headers else processed_info
+        'values': processed_info
     }
 
     sheet.values().clear(
@@ -190,14 +196,15 @@ def update_commendations_mod_in_sheet(spreadsheet_id, sheet_name, DatabaseConnec
         body={}
     ).execute()
 
-    sheet.values().update(
-        spreadsheetId=spreadsheet_id,
-        range=range_name,
-        valueInputOption='RAW',
-        body=body
-    ).execute()
+    if processed_info:
+        sheet.values().update(
+            spreadsheetId=spreadsheet_id,
+            range=range_name,
+            valueInputOption='RAW',
+            body=body
+        ).execute()
 
-    logger.info(f'Data updated in sheet {sheet_name}')
+    logger.info(f'Data updated in sheet {sheet_name} (headers preserved)')
 
 
 def update_all_commendations_in_sheet(spreadsheet_id, sheet_name, DatabaseConnection):
@@ -589,6 +596,7 @@ def approve_and_parse_to_database(spreadsheet_id, sheet_name, DatabaseConnection
         return False
 
     placeholders = ','.join(['%s'] * len(ids_to_approve))
+
     select_query = f'''
         SELECT 
             cm.id,
@@ -598,7 +606,8 @@ def approve_and_parse_to_database(spreadsheet_id, sheet_name, DatabaseConnection
             cm.employee_from_id, 
             cm.position, 
             cm.value_id,
-            csm.sender_name
+            csm.sender_name,
+            cm.branch
         FROM commendations_mod cm
         LEFT JOIN commendation_senders_mod csm ON cm.id = csm.commendation_id
         WHERE cm.id IN ({placeholders}) AND cm.deleted = FALSE
@@ -612,15 +621,15 @@ def approve_and_parse_to_database(spreadsheet_id, sheet_name, DatabaseConnection
             return False
 
         commendations_data = [
-            (row[1], row[2], row[3], row[4], row[5], row[6])
+            (row[1], row[2], row[3], row[4], row[5], row[6], row[8])
             for row in commendations_info
         ]
 
         insert_commendation_query = '''
                                     INSERT INTO commendations
                                     (commendation_text, commendation_date, employee_to_id, employee_from_id, position, \
-                                     value_id)
-                                    VALUES (%s, %s, %s, %s, %s, %s)
+                                     value_id, branch)
+                                    VALUES (%s, %s, %s, %s, %s, %s, %s)
                                     RETURNING id \
                                     '''
 
@@ -644,7 +653,6 @@ def approve_and_parse_to_database(spreadsheet_id, sheet_name, DatabaseConnection
         update_query = f'''
             UPDATE commendations_mod 
             SET deleted = TRUE 
-            WHERE id IN ({placeholders})
         '''
         cursor.execute(update_query, ids_to_approve)
 
@@ -731,6 +739,8 @@ def update_secret_santa_sheet(spreadsheet_id, sheet_name, DatabaseConnection):
             'FROM secret_santa_info ssi '
             'JOIN employees receiver ON ssi.employee_id = receiver.id '
             'JOIN employees giver ON ssi.secret_santa_id = giver.id '
+            'LEFT JOIN employees receiver ON ssi.employee_id = receiver.id '
+            'LEFT JOIN employees giver ON ssi.secret_santa_id = giver.id '
             'ORDER BY receiver.name'
         )
         employees_info = cursor.fetchall()
