@@ -11,7 +11,7 @@ from database import DatabaseConnection, update_authorized_users
 from handlers.authorization import authorized_only
 from integrations.google_api_functions import read_credentials_from_sheet, approve_and_parse_to_database
 from integrations.telethon_functions import send_photo
-from utils.main_menu_buttons import main_menu, admin_menu, button_names, old_button_names, secret_santa_menu
+from utils.main_menu_buttons import main_menu, admin_menu, button_names, old_button_names
 from utils.logger import logger
 from utils.main_menu_buttons import main_menu, admin_menu, button_names, old_button_names
 from utils.make_card import make_card
