@@ -2,7 +2,7 @@ import datetime
 
 from telebot import types
 
-from config import bot, MONTH_DICT, authorized_ids, make_card_data, process_in_progress
+from config import bot, MONTH_DICT, authorized_ids, make_card_data, process_in_progress, DEPARTMENTS_DICT
 from handlers import authorized_only
 from integrations.google_forms_filler import send_question_form
 from utils.messages import send_links
@@ -168,6 +168,20 @@ def awards_menu(message):
     sent_message = bot.send_message(message.chat.id, '🔽 Оберіть дію:',
                                     reply_markup=markup)
     make_card_data[message.chat.id]['sent_message'] = sent_message
+
+
+@bot.message_handler(func=lambda message: message.text == '📊 Питання на NETRONIC Pulse')
+@authorized_only(user_type='users')
+def send_netronic_pulse_departments(message):
+    markup = types.InlineKeyboardMarkup(row_width=1)
+
+    departments = DEPARTMENTS_DICT
+
+    for dept_code, _ in departments.items():
+        dept_btn = types.InlineKeyboardButton(text=dept_code, callback_data=f'pulse_dep_{dept_code}')
+        markup.add(dept_btn)
+
+    bot.send_message(message.chat.id, '🔍 Оберіть департамент:', reply_markup=markup)
 
 
 @bot.message_handler(func=lambda message: message.text == '🔗 Стрічка новин')

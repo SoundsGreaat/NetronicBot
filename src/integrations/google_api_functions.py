@@ -761,3 +761,101 @@ def update_secret_santa_sheet(spreadsheet_id, sheet_name, DatabaseConnection):
     ).execute()
 
     logger.info('Secret Santa data updated in sheet.')
+
+
+def update_pulse_questions_in_sheet(spreadsheet_id, DatabaseConnection):
+    creds_info = json.loads(os.getenv('GOOGLE_API_CREDENTIALS'))
+    creds = Credentials.from_service_account_info(creds_info, scopes=['https://www.googleapis.com/auth/spreadsheets'])
+    service = build('sheets', 'v4', credentials=creds)
+    sheet = service.spreadsheets()
+
+    now = datetime.now()
+    sheet_name = now.strftime('%m.%Y')
+
+    spreadsheet = sheet.get(spreadsheetId=spreadsheet_id).execute()
+    existing_sheets = spreadsheet.get('sheets', [])
+    sheet_metadata = next((s for s in existing_sheets if s['properties']['title'] == sheet_name), None)
+
+    if not sheet_metadata:
+        add_sheet_res = sheet.batchUpdate(spreadsheetId=spreadsheet_id, body={
+            'requests': [{
+                'addSheet': {
+                    'properties': {
+                        'title': sheet_name,
+                        'index': len(existing_sheets)
+                    }
+                }
+            }]
+        }).execute()
+        sheet_id = add_sheet_res['replies'][0]['addSheet']['properties']['sheetId']
+
+        headers = [['ID', 'Від кого', 'Кому', 'Питання', 'Дата']]
+        sheet.values().update(
+            spreadsheetId=spreadsheet_id, range=f'{sheet_name}!A1',
+            valueInputOption='RAW', body={'values': headers}
+        ).execute()
+    else:
+        sheet_id = sheet_metadata['properties']['sheetId']
+
+    width_requests = {
+        'requests': [
+            {
+                'updateDimensionProperties': {
+                    'range': {
+                        'sheetId': sheet_id,
+                        'dimension': 'COLUMNS',
+                        'startIndex': 0,
+                        'endIndex': 1
+                    },
+                    'properties': {'pixelSize': 50},
+                    'fields': 'pixelSize'
+                }
+            },
+            {
+                'updateDimensionProperties': {
+                    'range': {
+                        'sheetId': sheet_id,
+                        'dimension': 'COLUMNS',
+                        'startIndex': 1,
+                        'endIndex': 5
+                    },
+                    'properties': {'pixelSize': 250},
+                    'fields': 'pixelSize'
+                }
+            }
+        ]
+    }
+    sheet.batchUpdate(spreadsheetId=spreadsheet_id, body=width_requests).execute()
+
+    with DatabaseConnection() as (conn, cursor):
+        cursor.execute('''
+                       SELECT q.id,
+                              e.name,
+                              q.to_user,
+                              q.question,
+                              q.created_at
+                       FROM netronic_pulse_questions q
+                                LEFT JOIN employees e ON q.from_user = e.id
+                       ORDER BY q.created_at DESC
+                       ''')
+        questions_info = cursor.fetchall()
+
+    processed_info = [
+        [cell.strftime('%Y-%m-%d %H:%M:%S') if isinstance(cell, datetime) else (cell if cell is not None else ' ')
+         for cell in row]
+        for row in questions_info
+    ]
+
+    data_range = f'{sheet_name}!A2:E'
+    sheet.values().clear(spreadsheetId=spreadsheet_id, range=data_range).execute()
+
+    if processed_info:
+        body = {'values': processed_info}
+        sheet.values().update(
+            spreadsheetId=spreadsheet_id,
+            range=data_range,
+            valueInputOption='RAW',
+            body=body
+        ).execute()
+
+    logger.info(f'Data updated in sheet {sheet_name}')

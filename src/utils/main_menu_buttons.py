@@ -12,12 +12,13 @@ def create_main_menu():
     make_card_button = types.KeyboardButton('📜 Меню подяк')
     birthday_button = types.KeyboardButton('🎂 Дні народження')
     # secret_santa_button = types.KeyboardButton('🎅 Таємний Санта')
+    netronic_pulse_button = types.KeyboardButton('📊 Питання на NETRONIC Pulse')
     support_button = types.KeyboardButton('💭 Зауваження по роботі боту')
 
     markup.row(knowledge_base_button, business_processes_button)
     markup.row(news_feed_button, contacts_button)
     markup.row(make_card_button, birthday_button)
-    markup.row(support_button)
+    markup.row(netronic_pulse_button, support_button)
 
     admin_markup = copy.deepcopy(markup)
 

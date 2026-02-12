@@ -53,6 +53,17 @@ MONTH_DICT = {
     12: 'Грудень 🎄'
 }
 
+DEPARTMENTS_DICT = {
+    'D7': ['Лавренов Юрій Васильович', 'Очеретна Ганна', 'Мельникова Анастасія', 'Трофімов Павло',
+           'Вдовенко Олександра'],
+    'D1': ['Будзан Софія'],
+    'D2': ['Кучерук Дмитро'],
+    'D3': ['Ігнатоля Олена'],
+    'D4': ['Акулова Ірина', 'Шаповал Ростислав', 'Ушкац Ігор'],
+    'D5': ['Коростильова Яна'],
+    'D6': ['Степанчук Ганна'],
+}
+
 authorized_ids = {
     'users': set(),
     'admins': set(),
@@ -91,6 +102,8 @@ make_card_data = defaultdict(dict)
 add_sub_department_data = defaultdict(dict)
 
 secret_santa_data = defaultdict(dict)
+
+netronic_pulse_data = defaultdict(dict)
 
 process_in_progress = {}
 
