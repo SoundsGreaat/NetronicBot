@@ -170,7 +170,7 @@ def awards_menu(message):
     make_card_data[message.chat.id]['sent_message'] = sent_message
 
 
-@bot.message_handler(func=lambda message: message.text == '📊 Питання на NETRONIC Pulse')
+@bot.message_handler(func=lambda message: message.text == '💙 Питання на NETRONIC Pulse')
 @authorized_only(user_type='users')
 def send_netronic_pulse_departments(message):
     markup = types.InlineKeyboardMarkup(row_width=1)

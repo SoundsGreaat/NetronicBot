@@ -67,7 +67,7 @@ def send_netronic_pulse_employee_pulse(call):
         'department': dept_code
     }
 
-    sent_message = bot.edit_message_text(f'📊 Напишіть питання для {employee_name} на NETRONIC Pulse:',
+    sent_message = bot.edit_message_text(f'💙 Напишіть питання для {employee_name} на NETRONIC Pulse:',
                                          call.message.chat.id,
                                          call.message.message_id)
     netronic_pulse_data[call.message.chat.id]['sent_message'] = sent_message
