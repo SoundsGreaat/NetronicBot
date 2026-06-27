@@ -9,3 +9,5 @@
 /src/userbot_session.session
 /src/bot_session.session
 /logs
+.env
+update_all_months.py

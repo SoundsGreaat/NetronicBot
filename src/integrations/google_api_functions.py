@@ -451,6 +451,22 @@ def create_monthly_commendation_details_sheet(spreadsheet_id, DatabaseConnection
                 }
             },
             {
+                'repeatCell': {
+                    'range': {
+                        'sheetId': sheet_id,
+                        'startRowIndex': 2,
+                        'startColumnIndex': 0,
+                        'endColumnIndex': 6
+                    },
+                    'cell': {
+                        'userEnteredFormat': {
+                            'wrapStrategy': 'WRAP'
+                        }
+                    },
+                    'fields': 'userEnteredFormat.wrapStrategy'
+                }
+            },
+            {
                 'updateDimensionProperties': {
                     'range': {
                         'sheetId': sheet_id,
@@ -556,7 +572,7 @@ def create_monthly_commendation_details_sheet(spreadsheet_id, DatabaseConnection
             '''
             SELECT comm.commendation_date,
                    e_from.name || '\n' || e_from.position,
-                   COALESCE(cs.sender_name, ''),
+                   COALESCE(NULLIF(cs.sender_name, ''), e_from.name),
                    e_to.name || '\n' || e_to.position,
                    value.name,
                    comm.commendation_text
@@ -566,9 +582,10 @@ def create_monthly_commendation_details_sheet(spreadsheet_id, DatabaseConnection
                      LEFT JOIN commendation_values value ON comm.value_id = value.id
                      LEFT JOIN commendation_senders cs ON comm.id = cs.commendation_id
             WHERE EXTRACT(MONTH FROM comm.commendation_date) = %s
+              AND EXTRACT(YEAR FROM comm.commendation_date) = %s
             ORDER BY comm.id
             ''',
-            (now.month,)
+            (now.month, now.year)
         )
         commendations_info = cursor.fetchall()
 
