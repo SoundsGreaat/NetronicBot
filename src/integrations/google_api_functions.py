@@ -503,7 +503,7 @@ def create_monthly_commendation_details_sheet(spreadsheet_id, DatabaseConnection
                         'endIndex': 3
                     },
                     'properties': {
-                        'pixelSize': 420
+                        'pixelSize': 200
                     },
                     'fields': 'pixelSize'
                 }
@@ -517,7 +517,7 @@ def create_monthly_commendation_details_sheet(spreadsheet_id, DatabaseConnection
                         'endIndex': 4
                     },
                     'properties': {
-                        'pixelSize': 230
+                        'pixelSize': 420
                     },
                     'fields': 'pixelSize'
                 }
@@ -531,7 +531,7 @@ def create_monthly_commendation_details_sheet(spreadsheet_id, DatabaseConnection
                         'endIndex': 5
                     },
                     'properties': {
-                        'pixelSize': 600
+                        'pixelSize': 250
                     },
                     'fields': 'pixelSize'
                 }
@@ -545,7 +545,7 @@ def create_monthly_commendation_details_sheet(spreadsheet_id, DatabaseConnection
                         'endIndex': 6
                     },
                     'properties': {
-                        'pixelSize': 230
+                        'pixelSize': 600
                     },
                     'fields': 'pixelSize'
                 }
