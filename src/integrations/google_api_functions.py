@@ -549,7 +549,49 @@ def create_monthly_commendation_details_sheet(spreadsheet_id, DatabaseConnection
                     },
                     'fields': 'pixelSize'
                 }
-            }
+            },
+            {
+                'updateDimensionProperties': {
+                    'range': {
+                        'sheetId': sheet_id,
+                        'dimension': 'COLUMNS',
+                        'startIndex': 6,
+                        'endIndex': 7
+                    },
+                    'properties': {
+                        'pixelSize': 20
+                    },
+                    'fields': 'pixelSize'
+                }
+            },
+            {
+                'updateDimensionProperties': {
+                    'range': {
+                        'sheetId': sheet_id,
+                        'dimension': 'COLUMNS',
+                        'startIndex': 7,
+                        'endIndex': 8
+                    },
+                    'properties': {
+                        'pixelSize': 200
+                    },
+                    'fields': 'pixelSize'
+                }
+            },
+            {
+                'updateDimensionProperties': {
+                    'range': {
+                        'sheetId': sheet_id,
+                        'dimension': 'COLUMNS',
+                        'startIndex': 8,
+                        'endIndex': 9
+                    },
+                    'properties': {
+                        'pixelSize': 40
+                    },
+                    'fields': 'pixelSize'
+                }
+            },
         ]
 
         service.spreadsheets().batchUpdate(
@@ -590,21 +632,35 @@ def create_monthly_commendation_details_sheet(spreadsheet_id, DatabaseConnection
         commendations_info = cursor.fetchall()
 
     headers = [
-        [month_ua, '', '', '', '', ''],
-        ['Дата', 'Від кого подяка (хто відправив)', 'Від кого подяка', 'Кому подяка (ПІБ + посада)', 'Цінність', 'Текст подяки']
+        [month_ua, '', '', '', '', '', '', ''],
+        ['Дата', 'Від кого подяка (хто відправив)', 'Від кого подяка (кого вказано)', 'Кому подяка', 'Цінність', 'Текст подяки']
     ]
     processed_info = [
         [cell.strftime('%d/%m/%Y') if isinstance(cell, date) else (cell if cell is not None else ' ') for cell in row]
         for row in commendations_info
     ]
+
     data = headers + processed_info
-    range_name = f'{sheet_name}!A:F'
+    range_name = f'{sheet_name}!A:I'
     body = {'values': data}
     service.spreadsheets().values().update(
         spreadsheetId=spreadsheet_id,
         range=range_name,
         valueInputOption='RAW',
         body=body
+    ).execute()
+
+    formulas_range = f'{sheet_name}!H2:I2'
+    formulas_body = {
+        'values': [
+            ['=UNIQUE(FILTER(C3:C, C3:C<>""))', '=ARRAYFORMULA(IF(H2:H="","",COUNTIF(C$3:C, H2:H)))']
+        ]
+    }
+    service.spreadsheets().values().update(
+        spreadsheetId=spreadsheet_id,
+        range=formulas_range,
+        valueInputOption='USER_ENTERED',
+        body=formulas_body
     ).execute()
 
     logger.info(f'Commendation statistics (detailed) for {sheet_name} created/updated.')
