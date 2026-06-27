@@ -556,10 +556,10 @@ def create_monthly_commendation_details_sheet(spreadsheet_id, DatabaseConnection
             '''
             SELECT comm.commendation_date,
                    e_from.name || '\n' || e_from.position,
+                   COALESCE(cs.sender_name, ''),
                    e_to.name || '\n' || e_to.position,
                    value.name,
-                   comm.commendation_text,
-                   COALESCE(cs.sender_name, '')
+                   comm.commendation_text
             FROM commendations comm
                      JOIN employees e_from ON comm.employee_from_id = e_from.id
                      JOIN employees e_to ON comm.employee_to_id = e_to.id
@@ -574,7 +574,7 @@ def create_monthly_commendation_details_sheet(spreadsheet_id, DatabaseConnection
 
     headers = [
         [month_ua, '', '', '', '', ''],
-        ['Дата', 'Від кого подяка (ПІБ + посада)', 'Кому подяка (ПІБ + посада)', 'Цінність', 'Текст подяки', 'Від кого подяка']
+        ['Дата', 'Від кого подяка (хто відправив)', 'Від кого подяка', 'Кому подяка (ПІБ + посада)', 'Цінність', 'Текст подяки']
     ]
     processed_info = [
         [cell.strftime('%d/%m/%Y') if isinstance(cell, date) else (cell if cell is not None else ' ') for cell in row]
