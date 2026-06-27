@@ -286,20 +286,24 @@ def create_commendation_statistics_sheet(spreadsheet_id, DatabaseConnection):
         cursor.execute('''
                        SELECT e.name,
                               COUNT(CASE WHEN c.employee_from_id = e.id THEN 1 END) as sent_count,
-                              COUNT(CASE WHEN c.employee_to_id = e.id THEN 1 END)   as received_count
+                              COUNT(CASE WHEN c.employee_to_id = e.id THEN 1 END)   as received_count,
+                              STRING_AGG(DISTINCT COALESCE(cs.sender_name, e_from.name), ', ' ORDER BY COALESCE(cs.sender_name, e_from.name)) as sender_names
                        FROM employees e
                                 INNER JOIN commendations c ON (c.employee_from_id = e.id OR c.employee_to_id = e.id)
-                           AND EXTRACT(MONTH FROM c.commendation_date) = %s
-                           AND EXTRACT(YEAR FROM c.commendation_date) = %s
+                                AND EXTRACT(MONTH FROM c.commendation_date) = %s
+                                AND EXTRACT(YEAR FROM c.commendation_date) = %s
+                                LEFT JOIN employees e_from ON c.employee_from_id = e_from.id
+                                LEFT JOIN commendation_senders cs ON c.id = cs.commendation_id
+                       WHERE c.employee_to_id = e.id
                        GROUP BY e.id, e.name
                        ORDER BY sent_count DESC
                        ''', (now.month, now.year))
         statistics = cursor.fetchall()
 
-    headers = ['Employee Name', 'Sent Commendations', 'Received Commendations']
-    data = [headers] + [[row[0], row[1], row[2]] for row in statistics]
+    headers = ['Employee Name', 'Sent Commendations', 'Received Commendations', 'Received From']
+    data = [headers] + [[row[0], row[1], row[2], row[3] if row[3] else '-'] for row in statistics]
 
-    range_name = f'{sheet_name}!A:C'
+    range_name = f'{sheet_name}!A:D'
     body = {'values': data}
 
     service.spreadsheets().values().update(
@@ -357,7 +361,7 @@ def create_monthly_commendation_details_sheet(spreadsheet_id, DatabaseConnection
                         'startRowIndex': 0,
                         'endRowIndex': 2,
                         'startColumnIndex': 0,
-                        'endColumnIndex': 5
+                        'endColumnIndex': 6
                     },
                     'cell': {
                         'userEnteredFormat': {
@@ -374,7 +378,7 @@ def create_monthly_commendation_details_sheet(spreadsheet_id, DatabaseConnection
                         'startRowIndex': 0,
                         'endRowIndex': 1,
                         'startColumnIndex': 0,
-                        'endColumnIndex': 5
+                        'endColumnIndex': 6
                     },
                     'cell': {
                         'userEnteredFormat': {
@@ -399,7 +403,7 @@ def create_monthly_commendation_details_sheet(spreadsheet_id, DatabaseConnection
                         'startRowIndex': 1,
                         'endRowIndex': 2,
                         'startColumnIndex': 0,
-                        'endColumnIndex': 5
+                        'endColumnIndex': 6
                     },
                     'cell': {
                         'userEnteredFormat': {
@@ -423,7 +427,7 @@ def create_monthly_commendation_details_sheet(spreadsheet_id, DatabaseConnection
                         'startRowIndex': 0,
                         'endRowIndex': 1,
                         'startColumnIndex': 0,
-                        'endColumnIndex': 5
+                        'endColumnIndex': 6
                     },
                     'mergeType': 'MERGE_ALL'
                 }
@@ -435,7 +439,7 @@ def create_monthly_commendation_details_sheet(spreadsheet_id, DatabaseConnection
                         'startRowIndex': 0,
                         'endRowIndex': 2,
                         'startColumnIndex': 0,
-                        'endColumnIndex': 5
+                        'endColumnIndex': 6
                     },
                     'cell': {
                         'userEnteredFormat': {
@@ -515,6 +519,20 @@ def create_monthly_commendation_details_sheet(spreadsheet_id, DatabaseConnection
                     },
                     'fields': 'pixelSize'
                 }
+            },
+            {
+                'updateDimensionProperties': {
+                    'range': {
+                        'sheetId': sheet_id,
+                        'dimension': 'COLUMNS',
+                        'startIndex': 5,
+                        'endIndex': 6
+                    },
+                    'properties': {
+                        'pixelSize': 230
+                    },
+                    'fields': 'pixelSize'
+                }
             }
         ]
 
@@ -540,11 +558,13 @@ def create_monthly_commendation_details_sheet(spreadsheet_id, DatabaseConnection
                    e_from.name || '\n' || e_from.position,
                    e_to.name || '\n' || e_to.position,
                    value.name,
-                   comm.commendation_text
+                   comm.commendation_text,
+                   COALESCE(cs.sender_name, '')
             FROM commendations comm
                      JOIN employees e_from ON comm.employee_from_id = e_from.id
                      JOIN employees e_to ON comm.employee_to_id = e_to.id
                      LEFT JOIN commendation_values value ON comm.value_id = value.id
+                     LEFT JOIN commendation_senders cs ON comm.id = cs.commendation_id
             WHERE EXTRACT(MONTH FROM comm.commendation_date) = %s
             ORDER BY comm.id
             ''',
@@ -553,15 +573,15 @@ def create_monthly_commendation_details_sheet(spreadsheet_id, DatabaseConnection
         commendations_info = cursor.fetchall()
 
     headers = [
-        [month_ua, '', '', '', ''],
-        ['Дата', 'Від кого подяка (ПІБ + посада)', 'Кому подяка (ПІБ + посада)', 'Цінність', 'Текст подяки']
+        [month_ua, '', '', '', '', ''],
+        ['Дата', 'Від кого подяка (ПІБ + посада)', 'Кому подяка (ПІБ + посада)', 'Цінність', 'Текст подяки', 'Від кого подяка']
     ]
     processed_info = [
         [cell.strftime('%d/%m/%Y') if isinstance(cell, date) else (cell if cell is not None else ' ') for cell in row]
         for row in commendations_info
     ]
     data = headers + processed_info
-    range_name = f'{sheet_name}!A:E'
+    range_name = f'{sheet_name}!A:F'
     body = {'values': data}
     service.spreadsheets().values().update(
         spreadsheetId=spreadsheet_id,
