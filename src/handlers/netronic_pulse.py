@@ -21,12 +21,11 @@ def send_netronic_pulse_employees(call):
     for idx, employee in enumerate(employees):
         if isinstance(employee, (tuple, list)):
             category, employee_name = employee
-            header_btn = types.InlineKeyboardButton(text=f'— {category} —', callback_data='pulse_noop')
-            markup.add(header_btn)
+            button_text = f'{category}: {employee_name}'
         else:
-            employee_name = employee
+            button_text = employee
 
-        emp_btn = types.InlineKeyboardButton(text=employee_name,
+        emp_btn = types.InlineKeyboardButton(text=button_text,
                                              callback_data=f'pulse_emp_{dept_code}_{idx}')
         markup.add(emp_btn)
 
@@ -37,12 +36,6 @@ def send_netronic_pulse_employees(call):
                               reply_markup=markup)
     except apihelper.ApiException:
         pass
-
-
-@bot.callback_query_handler(func=lambda call: call.data == 'pulse_noop')
-@authorized_only(user_type='users')
-def pulse_noop(call):
-    bot.answer_callback_query(call.id)
 
 
 @bot.callback_query_handler(func=lambda call: call.data == 'netronic_pulse_departments')
