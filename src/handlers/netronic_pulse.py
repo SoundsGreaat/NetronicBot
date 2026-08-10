@@ -18,7 +18,14 @@ def send_netronic_pulse_employees(call):
 
     back_btn = types.InlineKeyboardButton(text='🔙 Назад', callback_data='netronic_pulse_departments')
 
-    for idx, employee_name in enumerate(employees):
+    for idx, employee in enumerate(employees):
+        if isinstance(employee, (tuple, list)):
+            category, employee_name = employee
+            header_btn = types.InlineKeyboardButton(text=f'— {category} —', callback_data='pulse_noop')
+            markup.add(header_btn)
+        else:
+            employee_name = employee
+
         emp_btn = types.InlineKeyboardButton(text=employee_name,
                                              callback_data=f'pulse_emp_{dept_code}_{idx}')
         markup.add(emp_btn)
@@ -30,6 +37,12 @@ def send_netronic_pulse_employees(call):
                               reply_markup=markup)
     except apihelper.ApiException:
         pass
+
+
+@bot.callback_query_handler(func=lambda call: call.data == 'pulse_noop')
+@authorized_only(user_type='users')
+def pulse_noop(call):
+    bot.answer_callback_query(call.id)
 
 
 @bot.callback_query_handler(func=lambda call: call.data == 'netronic_pulse_departments')
@@ -59,7 +72,8 @@ def send_netronic_pulse_employee_pulse(call):
     if emp_idx < 0 or emp_idx >= len(employees):
         return
 
-    employee_name = employees[emp_idx]
+    employee = employees[emp_idx]
+    employee_name = employee[1] if isinstance(employee, (tuple, list)) else employee
 
     process_in_progress[call.message.chat.id] = 'netronic_pulse_question'
     netronic_pulse_data[call.message.chat.id] = {
