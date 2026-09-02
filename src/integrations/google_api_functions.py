@@ -746,6 +746,7 @@ def approve_and_parse_to_database(spreadsheet_id, sheet_name, DatabaseConnection
         update_query = f'''
             UPDATE commendations_mod 
             SET deleted = TRUE 
+            WHERE id IN ({placeholders})
         '''
         cursor.execute(update_query, ids_to_approve)
 
