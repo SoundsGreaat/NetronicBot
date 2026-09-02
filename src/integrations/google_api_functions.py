@@ -683,7 +683,7 @@ def approve_and_parse_to_database(spreadsheet_id, sheet_name, DatabaseConnection
         return False
 
     commendation_info = values[1:]
-    ids_to_approve = [row[0] for row in commendation_info if row[-1].upper() == 'TRUE']
+    ids_to_approve = [row[0] for row in commendation_info if row and row[0] and row[-1].upper() == 'TRUE']
 
     if not ids_to_approve:
         return False
